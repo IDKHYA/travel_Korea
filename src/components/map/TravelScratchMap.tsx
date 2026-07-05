@@ -47,7 +47,13 @@ export function TravelScratchMap({
     <div
       ref={containerRef}
       className="relative mx-auto w-full max-w-md select-none"
-      style={{ aspectRatio: "815 / 1100" }}
+      style={{
+        aspectRatio: "815 / 1100",
+        // While scratching, lock the whole map area against page scroll/zoom
+        // gestures so a drag stays a scratch instead of scrolling the page.
+        touchAction: scratchModeRegionId ? "none" : "manipulation",
+        overscrollBehavior: "contain",
+      }}
     >
       <Image
         src="/maps/map-color@4x.webp"

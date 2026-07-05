@@ -2,7 +2,7 @@
 
 import { useEffect, useRef } from "react";
 import type { Region, UserRegionStatus } from "@/types/travel-map";
-import { clientToMapPoint, MAP_HEIGHT, MAP_WIDTH } from "@/lib/geometry";
+import { clientToMapPoint } from "@/lib/geometry";
 import {
   computeScratchProgress,
   getBrushRadius,
@@ -33,6 +33,29 @@ export function ScratchLayer({
   const drawingRef = useRef(false);
   const pathCacheRef = useRef<Map<string, Path2D>>(new Map());
 
+  // Keep live copies of props in refs so the redraw logic (which is also
+  // driven by window "resize" — bound once) always reads the CURRENT status,
+  // never the stale closure captured at mount. On mobile the address bar
+  // toggling fires resize constantly; a stale closure there would repaint
+  // gray over already-completed regions.
+  const regionsRef = useRef(regions);
+  const getStatusRef = useRef(getStatus);
+  const activeRegionIdRef = useRef(activeRegionId);
+  useEffect(() => {
+    regionsRef.current = regions;
+    getStatusRef.current = getStatus;
+    activeRegionIdRef.current = activeRegionId;
+  });
+
+  const getPath = (region: Region): Path2D => {
+    let path = pathCacheRef.current.get(region.id);
+    if (!path) {
+      path = new Path2D(region.d);
+      pathCacheRef.current.set(region.id, path);
+    }
+    return path;
+  };
+
   const redrawBase = () => {
     const canvas = canvasRef.current;
     const img = imageRef.current;
@@ -49,22 +72,11 @@ export function ScratchLayer({
     ctx.save();
     ctx.scale(scaleX, scaleY);
     ctx.globalCompositeOperation = "destination-out";
-    for (const region of regions) {
-      const status = getStatus(region.id);
-      if (status.status !== "completed") continue;
-      const path = getPath(region);
-      ctx.fill(path);
+    for (const region of regionsRef.current) {
+      if (getStatusRef.current(region.id).status !== "completed") continue;
+      ctx.fill(getPath(region));
     }
     ctx.restore();
-  };
-
-  const getPath = (region: Region): Path2D => {
-    let path = pathCacheRef.current.get(region.id);
-    if (!path) {
-      path = new Path2D(region.d);
-      pathCacheRef.current.set(region.id, path);
-    }
-    return path;
   };
 
   const resizeCanvas = () => {
@@ -73,31 +85,66 @@ export function ScratchLayer({
     if (!canvas || !container) return;
     const rect = container.getBoundingClientRect();
     const dpr = Math.min(window.devicePixelRatio || 1, 2);
-    canvas.width = Math.round(rect.width * dpr);
-    canvas.height = Math.round(rect.height * dpr);
+    const nextW = Math.round(rect.width * dpr);
+    const nextH = Math.round(rect.height * dpr);
+    // Skip if nothing actually changed. Mobile browsers fire "resize" when the
+    // URL bar shows/hides even though the map (width-locked by aspect ratio)
+    // did not change size — repainting there would wipe in-progress scratches.
+    if (canvas.width === nextW && canvas.height === nextH) return;
+    canvas.width = nextW;
+    canvas.height = nextH;
     redrawBase();
   };
 
   useEffect(() => {
     const img = new window.Image();
-    img.src = "/maps/map-gray@4x.webp";
     img.onload = () => {
       imageRef.current = img;
-      resizeCanvas();
+      // Force initial paint even though dimensions may match.
+      const canvas = canvasRef.current;
+      if (canvas) {
+        canvas.width = 0;
+        resizeCanvas();
+      }
     };
+    img.src = "/maps/map-gray@4x.webp";
     imageRef.current = img;
 
     const handleResize = () => resizeCanvas();
     window.addEventListener("resize", handleResize);
-    return () => window.removeEventListener("resize", handleResize);
+    window.addEventListener("orientationchange", handleResize);
+    return () => {
+      window.removeEventListener("resize", handleResize);
+      window.removeEventListener("orientationchange", handleResize);
+    };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Redraw whenever completion states change (e.g. a region just completed).
+  // Only redraw the base when the SET OF COMPLETED regions changes (i.e. a
+  // region just crossed the completion threshold). Redrawing on every status
+  // string change would wipe an in-progress ("scratching") region back to gray
+  // the moment it transitions from visited_unscratched to scratching.
+  const completedSignature = regions
+    .filter((r) => getStatus(r.id).status === "completed")
+    .map((r) => r.id)
+    .join(",");
   useEffect(() => {
     redrawBase();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [regions, JSON.stringify(regions.map((r) => getStatus(r.id).status))]);
+  }, [completedSignature]);
+
+  // Prevent the page from scrolling while a scratch stroke is in progress.
+  // touch-action:none alone is unreliable on mobile Safari, so we also cancel
+  // touchmove with a non-passive native listener during an active stroke.
+  useEffect(() => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+    const preventScroll = (e: TouchEvent) => {
+      if (drawingRef.current) e.preventDefault();
+    };
+    canvas.addEventListener("touchmove", preventScroll, { passive: false });
+    return () => canvas.removeEventListener("touchmove", preventScroll);
+  }, []);
 
   const canScratch = (regionId: string) => {
     const s = getStatus(regionId).status;
@@ -151,7 +198,11 @@ export function ScratchLayer({
       <canvas
         ref={canvasRef}
         className="absolute inset-0 h-full w-full"
-        style={{ touchAction: "none", pointerEvents: activeRegionId ? "auto" : "none" }}
+        style={{
+          touchAction: "none",
+          overscrollBehavior: "contain",
+          pointerEvents: activeRegionId ? "auto" : "none",
+        }}
         onPointerDown={handlePointerDown}
         onPointerMove={handlePointerMove}
         onPointerUp={finishStroke}
