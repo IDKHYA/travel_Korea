@@ -5,6 +5,7 @@ import regionsFile from "@/data/regions.generated.mapped.json";
 import type { RegionsFile } from "@/types/travel-map";
 import { TravelScratchMap } from "@/components/map/TravelScratchMap";
 import { RegionDetailPanel } from "@/components/map/RegionDetailPanel";
+import { ScratchModeBar } from "@/components/map/ScratchModeBar";
 import { RegionSearch } from "@/components/map/RegionSearch";
 import { TravelStats } from "@/components/stats/TravelStats";
 import { useRegionStatus } from "@/hooks/useRegionStatus";
@@ -97,6 +98,14 @@ export default function MapPage() {
 
       <RegionSearch regions={regions} onSelect={handleSelect} />
 
+      {selectedRegion && scratchModeRegionId === selectedRegion.id && (
+        <ScratchModeBar
+          regionName={selectedRegion.nameKo}
+          progress={getStatus(selectedRegion.id).scratchProgress}
+          onFinish={() => setScratchModeRegionId(null)}
+        />
+      )}
+
       <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-center">
         <TravelScratchMap
           regions={regions}
@@ -109,13 +118,12 @@ export default function MapPage() {
           recordCountForRegion={(id) => recordsForRegion(id).length}
         />
 
-        {selectedRegion && (
+        {selectedRegion && scratchModeRegionId !== selectedRegion.id && (
           <RegionDetailPanel
             region={selectedRegion}
             status={getStatus(selectedRegion.id)}
             records={recordsForRegion(selectedRegion.id)}
             photos={photosForRegion(selectedRegion.id)}
-            scratchModeActive={scratchModeRegionId === selectedRegion.id}
             onClose={handleClosePanel}
             onRegisterVisit={() => registerVisit(selectedRegion.id)}
             onCancelVisit={() => {
@@ -123,7 +131,6 @@ export default function MapPage() {
               setScratchModeRegionId(null);
             }}
             onStartScratch={() => setScratchModeRegionId(selectedRegion.id)}
-            onFinishScratch={() => setScratchModeRegionId(null)}
             onAddRecord={(input) => {
               const record = addRecord({
                 regionId: selectedRegion.id,

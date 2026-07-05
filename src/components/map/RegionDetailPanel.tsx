@@ -17,12 +17,10 @@ export function RegionDetailPanel({
   status,
   records,
   photos,
-  scratchModeActive,
   onClose,
   onRegisterVisit,
   onCancelVisit,
   onStartScratch,
-  onFinishScratch,
   onAddRecord,
   onDeleteRecord,
   onDeletePhoto,
@@ -31,12 +29,10 @@ export function RegionDetailPanel({
   status: UserRegionStatus;
   records: TravelRecord[];
   photos: TravelPhoto[];
-  scratchModeActive: boolean;
   onClose: () => void;
   onRegisterVisit: () => void;
   onCancelVisit: () => void;
   onStartScratch: () => void;
-  onFinishScratch: () => void;
   onAddRecord: (input: {
     title?: string;
     visitedDate: string;
@@ -96,51 +92,37 @@ export function RegionDetailPanel({
         </div>
       </dl>
 
-      {scratchModeActive ? (
-        <div className="mt-4 space-y-2 rounded-md bg-blue-50 p-3 text-sm">
-          <p>방문한 지역을 긁어 컬러로 만들어보세요.</p>
-          <p>현재 진행률: {status.scratchProgress}%</p>
+      <div className="mt-4 flex flex-col gap-2">
+        {status.status === "unvisited" && (
+          <button type="button" onClick={onRegisterVisit} className="rounded bg-blue-600 px-3 py-2.5 text-sm text-white">
+            방문 지역으로 등록
+          </button>
+        )}
+        {status.status === "visited_unscratched" && (
+          <button type="button" onClick={onStartScratch} className="rounded bg-blue-600 px-3 py-2.5 text-sm text-white">
+            스크래치 시작
+          </button>
+        )}
+        {status.status === "scratching" && (
+          <button type="button" onClick={onStartScratch} className="rounded bg-blue-600 px-3 py-2.5 text-sm text-white">
+            스크래치 계속하기
+          </button>
+        )}
+        {isCompleted && (
           <button
             type="button"
-            onClick={onFinishScratch}
-            className="w-full rounded bg-blue-600 px-3 py-2.5 text-white"
+            onClick={() => setShowForm((v) => !v)}
+            className="rounded bg-emerald-600 px-3 py-2.5 text-sm text-white"
           >
-            스크래치 모드 종료
+            사진/기록 추가
           </button>
-        </div>
-      ) : (
-        <div className="mt-4 flex flex-col gap-2">
-          {status.status === "unvisited" && (
-            <button type="button" onClick={onRegisterVisit} className="rounded bg-blue-600 px-3 py-2.5 text-sm text-white">
-              방문 지역으로 등록
-            </button>
-          )}
-          {status.status === "visited_unscratched" && (
-            <button type="button" onClick={onStartScratch} className="rounded bg-blue-600 px-3 py-2.5 text-sm text-white">
-              스크래치 시작
-            </button>
-          )}
-          {status.status === "scratching" && (
-            <button type="button" onClick={onStartScratch} className="rounded bg-blue-600 px-3 py-2.5 text-sm text-white">
-              스크래치 계속하기
-            </button>
-          )}
-          {isCompleted && (
-            <button
-              type="button"
-              onClick={() => setShowForm((v) => !v)}
-              className="rounded bg-emerald-600 px-3 py-2.5 text-sm text-white"
-            >
-              사진/기록 추가
-            </button>
-          )}
-          {isVisited && (
-            <button type="button" onClick={onCancelVisit} className="rounded border border-slate-300 px-3 py-2.5 text-sm text-slate-600">
-              방문 취소
-            </button>
-          )}
-        </div>
-      )}
+        )}
+        {isVisited && (
+          <button type="button" onClick={onCancelVisit} className="rounded border border-slate-300 px-3 py-2.5 text-sm text-slate-600">
+            방문 취소
+          </button>
+        )}
+      </div>
 
       {showForm && (
         <div className="mt-3">
