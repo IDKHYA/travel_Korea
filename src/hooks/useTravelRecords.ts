@@ -74,6 +74,11 @@ export function useTravelRecords() {
     setPhotos((prev) => prev.filter((p) => p.id !== id));
   }, []);
 
+  const resetAllRecords = useCallback(() => {
+    setRecords([]);
+    setPhotos([]);
+  }, []);
+
   return {
     records,
     photos,
@@ -84,5 +89,6 @@ export function useTravelRecords() {
     deleteRecord,
     addPhoto,
     deletePhoto,
+    resetAllRecords,
   };
 }

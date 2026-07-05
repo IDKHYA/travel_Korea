@@ -13,8 +13,18 @@ import { exportAllData, importAllData } from "@/lib/storage";
 
 const { regions } = regionsFile as RegionsFile;
 
+const regionIds = regions.map((r) => r.id);
+
 export default function MapPage() {
-  const { statuses, getStatus, registerVisit, cancelVisit, updateScratchProgress } = useRegionStatus();
+  const {
+    statuses,
+    getStatus,
+    registerVisit,
+    cancelVisit,
+    updateScratchProgress,
+    fillAllRegions,
+    resetAllRegions,
+  } = useRegionStatus(regionIds);
   const {
     records,
     photos,
@@ -24,6 +34,7 @@ export default function MapPage() {
     deleteRecord,
     addPhoto,
     deletePhoto,
+    resetAllRecords,
   } = useTravelRecords();
 
   const [selectedRegionId, setSelectedRegionId] = useState<string | null>(null);
@@ -64,11 +75,24 @@ export default function MapPage() {
     window.location.reload();
   };
 
+  const handleFillMap = () => {
+    if (!window.confirm("전국 150개 지역을 모두 방문 완료 상태로 채울까요?")) return;
+    fillAllRegions();
+  };
+
+  const handleResetMap = () => {
+    if (!window.confirm("모든 방문 상태, 여행 기록, 사진을 초기화할까요? 이 작업은 되돌릴 수 없습니다.")) return;
+    resetAllRegions();
+    resetAllRecords();
+    setSelectedRegionId(null);
+    setScratchModeRegionId(null);
+  };
+
   return (
-    <main className="mx-auto flex min-h-screen max-w-5xl flex-col gap-4 p-4">
+    <main className="mx-auto flex min-h-screen max-w-5xl flex-col gap-4 p-3 pb-6 sm:p-4">
       <header className="flex flex-col items-center gap-1 text-center">
-        <h1 className="text-xl font-bold">대한민국 여행 스크래치 맵</h1>
-        <p className="text-sm text-slate-500">방문한 지역을 긁어 컬러로 만들고 여행 기록을 남겨보세요.</p>
+        <h1 className="text-lg font-bold sm:text-xl">대한민국 여행 스크래치 맵</h1>
+        <p className="text-xs text-slate-500 sm:text-sm">방문한 지역을 긁어 컬러로 만들고 여행 기록을 남겨보세요.</p>
       </header>
 
       <RegionSearch regions={regions} onSelect={handleSelect} />
@@ -120,11 +144,33 @@ export default function MapPage() {
 
       <footer className="mt-auto flex flex-col items-center gap-2 border-t border-slate-200 pt-3">
         <TravelStats regions={regions} statuses={statuses} photos={photos} records={records} />
-        <div className="flex gap-2">
-          <button type="button" onClick={handleExport} className="rounded border border-slate-300 px-3 py-1 text-xs">
+        <div className="flex flex-wrap justify-center gap-2">
+          <button
+            type="button"
+            onClick={handleFillMap}
+            className="rounded border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs text-emerald-700 sm:py-1"
+          >
+            지도 전체 채우기
+          </button>
+          <button
+            type="button"
+            onClick={handleResetMap}
+            className="rounded border border-red-300 bg-red-50 px-3 py-1.5 text-xs text-red-600 sm:py-1"
+          >
+            전체 초기화
+          </button>
+          <button
+            type="button"
+            onClick={handleExport}
+            className="rounded border border-slate-300 px-3 py-1.5 text-xs sm:py-1"
+          >
             데이터 내보내기
           </button>
-          <button type="button" onClick={handleImportClick} className="rounded border border-slate-300 px-3 py-1 text-xs">
+          <button
+            type="button"
+            onClick={handleImportClick}
+            className="rounded border border-slate-300 px-3 py-1.5 text-xs sm:py-1"
+          >
             데이터 가져오기
           </button>
           <input ref={fileInputRef} type="file" accept="application/json" className="hidden" onChange={handleImportFile} />

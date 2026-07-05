@@ -4,7 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import { loadRegionStatuses, saveRegionStatuses } from "@/lib/storage";
 import type { RegionVisitStatus, UserRegionStatus } from "@/types/travel-map";
 
-export function useRegionStatus() {
+export function useRegionStatus(regionIds: string[]) {
   const [statuses, setStatuses] = useState<Record<string, UserRegionStatus>>({});
   const [loaded, setLoaded] = useState(false);
 
@@ -69,5 +69,37 @@ export function useRegionStatus() {
     [setStatus]
   );
 
-  return { statuses, loaded, getStatus, registerVisit, cancelVisit, updateScratchProgress };
+  const fillAllRegions = useCallback(() => {
+    const now = new Date().toISOString();
+    setStatuses((prev) => {
+      const next: Record<string, UserRegionStatus> = { ...prev };
+      for (const regionId of regionIds) {
+        const existing = prev[regionId];
+        next[regionId] = {
+          regionId,
+          status: "completed",
+          scratchProgress: 100,
+          completedAt: existing?.completedAt ?? now,
+          createdAt: existing?.createdAt ?? now,
+          updatedAt: now,
+        };
+      }
+      return next;
+    });
+  }, [regionIds]);
+
+  const resetAllRegions = useCallback(() => {
+    setStatuses({});
+  }, []);
+
+  return {
+    statuses,
+    loaded,
+    getStatus,
+    registerVisit,
+    cancelVisit,
+    updateScratchProgress,
+    fillAllRegions,
+    resetAllRegions,
+  };
 }

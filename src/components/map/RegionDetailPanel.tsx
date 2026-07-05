@@ -54,19 +54,25 @@ export function RegionDetailPanel({
 
   return (
     <aside
-      className="fixed inset-x-0 bottom-0 z-40 max-h-[80vh] overflow-y-auto rounded-t-2xl bg-white p-4 shadow-2xl md:static md:inset-auto md:max-h-none md:w-80 md:rounded-xl md:border md:border-slate-200 md:shadow-sm"
+      className="fixed inset-x-0 bottom-0 z-40 max-h-[85vh] overflow-y-auto rounded-t-2xl bg-white p-4 pb-[max(1rem,env(safe-area-inset-bottom))] shadow-2xl md:static md:inset-auto md:max-h-none md:w-80 md:rounded-xl md:border md:border-slate-200 md:pb-4 md:shadow-sm"
       role="dialog"
       aria-label={`${region.nameKo} 상세 정보`}
       onKeyDown={(e) => {
         if (e.key === "Escape") onClose();
       }}
     >
+      <div className="mx-auto mb-1 block h-1 w-10 rounded-full bg-slate-200 md:hidden" aria-hidden="true" />
       <div className="flex items-start justify-between">
         <div>
           <h2 className="text-lg font-bold">{region.nameKo}</h2>
           <p className="text-sm text-slate-500">{region.province}</p>
         </div>
-        <button type="button" onClick={onClose} aria-label="패널 닫기" className="text-slate-400 hover:text-slate-600">
+        <button
+          type="button"
+          onClick={onClose}
+          aria-label="패널 닫기"
+          className="-m-2 flex h-9 w-9 items-center justify-center text-slate-400 hover:text-slate-600"
+        >
           ✕
         </button>
       </div>
@@ -97,7 +103,7 @@ export function RegionDetailPanel({
           <button
             type="button"
             onClick={onFinishScratch}
-            className="w-full rounded bg-blue-600 px-3 py-1.5 text-white"
+            className="w-full rounded bg-blue-600 px-3 py-2.5 text-white"
           >
             스크래치 모드 종료
           </button>
@@ -105,17 +111,17 @@ export function RegionDetailPanel({
       ) : (
         <div className="mt-4 flex flex-col gap-2">
           {status.status === "unvisited" && (
-            <button type="button" onClick={onRegisterVisit} className="rounded bg-blue-600 px-3 py-1.5 text-sm text-white">
+            <button type="button" onClick={onRegisterVisit} className="rounded bg-blue-600 px-3 py-2.5 text-sm text-white">
               방문 지역으로 등록
             </button>
           )}
           {status.status === "visited_unscratched" && (
-            <button type="button" onClick={onStartScratch} className="rounded bg-blue-600 px-3 py-1.5 text-sm text-white">
+            <button type="button" onClick={onStartScratch} className="rounded bg-blue-600 px-3 py-2.5 text-sm text-white">
               스크래치 시작
             </button>
           )}
           {status.status === "scratching" && (
-            <button type="button" onClick={onStartScratch} className="rounded bg-blue-600 px-3 py-1.5 text-sm text-white">
+            <button type="button" onClick={onStartScratch} className="rounded bg-blue-600 px-3 py-2.5 text-sm text-white">
               스크래치 계속하기
             </button>
           )}
@@ -123,13 +129,13 @@ export function RegionDetailPanel({
             <button
               type="button"
               onClick={() => setShowForm((v) => !v)}
-              className="rounded bg-emerald-600 px-3 py-1.5 text-sm text-white"
+              className="rounded bg-emerald-600 px-3 py-2.5 text-sm text-white"
             >
               사진/기록 추가
             </button>
           )}
           {isVisited && (
-            <button type="button" onClick={onCancelVisit} className="rounded border border-slate-300 px-3 py-1.5 text-sm text-slate-600">
+            <button type="button" onClick={onCancelVisit} className="rounded border border-slate-300 px-3 py-2.5 text-sm text-slate-600">
               방문 취소
             </button>
           )}
