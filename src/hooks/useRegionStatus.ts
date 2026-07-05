@@ -63,8 +63,9 @@ export function useRegionStatus(regionIds: string[]) {
 
   const updateScratchProgress = useCallback(
     (regionId: string, progress: number) => {
-      const status: RegionVisitStatus = progress >= 70 ? "completed" : "scratching";
-      setStatus(regionId, status, progress);
+      // 80% 이상 긁으면 다 긁은 것으로 간주하고 나머지를 자동으로 채운다.
+      const isDone = progress >= 80;
+      setStatus(regionId, isDone ? "completed" : "scratching", isDone ? 100 : progress);
     },
     [setStatus]
   );

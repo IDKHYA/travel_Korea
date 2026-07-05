@@ -1,7 +1,7 @@
 import type { Point, Region } from "@/types/travel-map";
 import { MAP_HEIGHT, MAP_WIDTH } from "@/lib/geometry";
 
-export const COMPLETE_THRESHOLD = 70;
+export const COMPLETE_THRESHOLD = 80;
 export const BRUSH_SIZE_DESKTOP = 24;
 export const BRUSH_SIZE_MOBILE = 32;
 
